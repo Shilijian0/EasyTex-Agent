@@ -1,0 +1,75 @@
+{
+  "_comment": "=== Claude Code Skill 配置示例：LaTeX Optimizer ===\n请将以下内容合并到 ~/.claude/settings.json 或项目的 .claude/settings.json 中。",
+
+  "skills": [
+    {
+      "name": "latex-optimizer",
+      "description": "LaTeX 编译优化与自然语言转写工具。解析 .tex 导言区、静默编译、精准错误反馈、安全修改字体/宏包/排版。",
+      "tools": [
+        {
+          "name": "optimize_and_compile_latex",
+          "description": "对本地 LaTeX 文件执行智能操作。支持 analyze / compile / modify_preamble / full_optimize / check_fonts 五种 action。",
+          "command": "python",
+          "args": [
+            "${CLAUDE_PLUGIN_ROOT}/../scripts/latex_core.py"
+          ],
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "filepath": {
+                "type": "string",
+                "description": "目标 .tex 文件绝对路径"
+              },
+              "action_type": {
+                "type": "string",
+                "enum": ["analyze", "compile", "modify_preamble", "full_optimize", "check_fonts"],
+                "description": "操作类型"
+              },
+              "user_prompt": {
+                "type": "string",
+                "description": "用户自然语言指令（可选）"
+              },
+              "modifications": {
+                "type": "object",
+                "description": "AI 生成的修改指令（modify/full_optimize 时使用）",
+                "properties": {
+                  "packages_to_add": { "type": "array", "items": { "type": "string" } },
+                  "packages_to_remove": { "type": "array", "items": { "type": "string" } },
+                  "font_settings": {
+                    "type": "object",
+                    "properties": {
+                      "main_font": { "type": "string" },
+                      "sans_font": { "type": "string" },
+                      "mono_font": { "type": "string" },
+                      "cjk_font": { "type": "string" }
+                    }
+                  },
+                  "line_spacing": { "type": "number" },
+                  "raw_injections": { "type": "array", "items": { "type": "string" } },
+                  "body_replacements": { "type": "object" }
+                }
+              },
+              "compiler": {
+                "type": "string",
+                "enum": ["xelatex", "lualatex", "pdflatex", "latexmk", "auto"],
+                "default": "auto"
+              },
+              "timeout": {
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 300,
+                "default": 60
+              }
+            },
+            "required": ["filepath", "action_type"]
+          }
+        }
+      ]
+    }
+  ],
+
+  "hooks": {
+    "_comment": "可选：在每次 LaTeX 编译完成后自动清理辅助文件",
+    "PostToolUse": []
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/tool-v0.1.json",
+  "name": "optimize_and_compile_latex",
+  "version": "1.0.0",
+  "description": "LaTeX 编译优化与自然语言转写工具。解析 .tex 文件导言区、静默编译、精准错误反馈、安全修改宏包与字体配置，并支持自然语言转 LaTeX 公式的闭环验证。",
+  "author": "LaTeX Optimizer Skill Contributors",
+  "license": "MIT",
+  "keywords": ["latex", "xelatex", "compile", "font", "preamble", "nl-to-latex"],
+  "tools": [
+    {
+      "name": "optimize_and_compile_latex",
+      "description": "对本地 LaTeX 文件执行智能操作：\n- analyze: 解析 .tex 文件的导言区结构（documentclass、宏包列表、自定义命令、字体设置），返回结构化 JSON 供 AI 理解上下文\n- compile: 在后台静默调用 xelatex/latexmk 编译指定文件，捕获全部输出并解析 .log 文件，返回编译成功/失败状态及精确错误摘要\n- modify_preamble: 根据 AI 提供的修改指令，安全地向导言区注入或修改宏包、字体配置、行距等设置，并自动触发编译验证\n- full_optimize: 端到端流程——先分析导言区，再由 AI 根据分析结果和用户 prompt 生成修改，注入后编译验证，形成完整闭环\n- check_fonts: 检查系统已安装字体列表，验证用户指定的中英文字体是否可用",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "filepath": {
+            "type": "string",
+            "description": "目标 .tex 文件的绝对路径。必须存在且为 .tex 后缀。"
+          },
+          "action_type": {
+            "type": "string",
+            "enum": ["analyze", "compile", "modify_preamble", "full_optimize", "check_fonts"],
+            "description": "操作类型：\n- analyze: 仅解析导言区，不修改文件\n- compile: 仅编译，不修改文件\n- modify_preamble: 安全修改导言区并编译验证\n- full_optimize: 分析→修改→编译完整闭环\n- check_fonts: 检查系统可用字体"
+          },
+          "user_prompt": {
+            "type": "string",
+            "description": "用户的自然语言指令原文。用于 full_optimize 模式中 AI 生成具体 LaTeX 代码时参考。其他模式下可选。"
+          },
+          "modifications": {
+            "type": "object",
+            "description": "当 action_type 为 modify_preamble 或 full_optimize 时，AI 生成的修改指令对象。结构：\n- packages_to_add: 要添加的宏包名列表，如 [\"ctex\", \"geometry\"]\n- packages_to_remove: 要移除的宏包名列表\n- font_settings: 字体配置对象 {main_font, sans_font, mono_font, cjk_font}\n- line_spacing: 行距倍数，如 1.5\n- raw_injections: 要直接注入导言区的 LaTeX 代码行列表\n- body_replacements: 正文替换映射 {old_text: new_text}",
+            "properties": {
+              "packages_to_add": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "需要添加到导言区的宏包名称列表"
+              },
+              "packages_to_remove": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "需要从导言区移除的宏包名称列表"
+              },
+              "font_settings": {
+                "type": "object",
+                "properties": {
+                  "main_font": { "type": "string", "description": "英文主字体名称" },
+                  "sans_font": { "type": "string", "description": "英文无衬线字体名称" },
+                  "mono_font": { "type": "string", "description": "英文等宽字体名称" },
+                  "cjk_font": { "type": "string", "description": "中文字体名称" }
+                },
+                "description": "字体配置"
+              },
+              "line_spacing": {
+                "type": "number",
+                "minimum": 1.0,
+                "maximum": 3.0,
+                "description": "行间距倍数"
+              },
+              "raw_injections": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "要直接注入导言区的原始 LaTeX 代码行"
+              },
+              "body_replacements": {
+                "type": "object",
+                "additionalProperties": { "type": "string" },
+                "description": "正文中的文本替换映射"
+              }
+            },
+            "additionalProperties": false
+          },
+          "compiler": {
+            "type": "string",
+            "enum": ["xelatex", "lualatex", "pdflatex", "latexmk", "auto"],
+            "default": "auto",
+            "description": "指定 LaTeX 编译器。默认为 auto（自动检测可用的编译器，优先级：xelatex > lualatex > latexmk > pdflatex）。"
+          },
+          "timeout": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 300,
+            "default": 60,
+            "description": "编译超时时间（秒）。默认 60 秒。"
+          }
+        },
+        "required": ["filepath", "action_type"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "操作是否成功"
+          },
+          "action": {
+            "type": "string",
+            "description": "实际执行的操作类型"
+          },
+          "data": {
+            "type": "object",
+            "description": "操作返回的核心数据。内容因 action 而异。"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "line": { "type": "integer" },
+                "message": { "type": "string" },
+                "context": { "type": "string" },
+                "is_fatal": { "type": "boolean" }
+              }
+            },
+            "description": "编译错误列表（compile/modify 模式下）"
+          },
+          "fatal_signal": {
+            "type": "string",
+            "enum": ["FONT_NOT_FOUND", "COMPILER_NOT_FOUND", "FILE_LOCKED", "SYNTAX_ERROR", null],
+            "description": "致命错误信号。非 null 时表示操作被中断，AI 应停止自动修改并提示用户。"
+          },
+          "compiler_output": {
+            "type": "string",
+            "description": "编译器的原始输出摘要"
+          }
+        }
+      }
+    }
+  ]
+}

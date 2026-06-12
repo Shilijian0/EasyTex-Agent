@@ -1,0 +1,50 @@
+% sample_basic.tex — 正常可编译的 LaTeX 测试样本
+% 用于测试 LatexProject 解析器与 LatexCompiler 正常编译流程
+
+\documentclass[12pt,a4paper]{article}
+
+% === 基础宏包 ===
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+
+% === 自定义命令 ===
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newtheorem{theorem}{定理}[section]
+
+% === 标题信息 ===
+\title{线性代数基础}
+\author{张三}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{引言}
+这是线性代数的基础介绍。我们工作在实数域 $\R$ 上。
+
+\section{矩阵运算}
+考虑一个 $3 \times 3$ 的单位矩阵：
+\begin{equation}
+    I_3 = \begin{pmatrix}
+        1 & 0 & 0 \\
+        0 & 1 & 0 \\
+        0 & 0 & 1
+    \end{pmatrix}
+\end{equation}
+
+\begin{theorem}[矩阵乘法的结合律]
+对于任意矩阵 $A, B, C$，有：
+\begin{equation}
+    (AB)C = A(BC)
+\end{equation}
+\end{theorem}
+
+\section{结论}
+本文档用于验证 LaTeX Optimizer Skill 的正常解析和编译能力。
+
+\end{document}

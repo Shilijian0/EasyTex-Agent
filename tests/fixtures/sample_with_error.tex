@@ -1,0 +1,41 @@
+% sample_with_error.tex — 包含多种典型错误的 LaTeX 测试样本
+% 用于测试 LatexErrorParser 的错误提取与分类能力
+
+\documentclass[12pt,a4paper]{article}
+
+% === 故意引入冲突的宏包 ===
+\usepackage{fontspec}
+\usepackage[utf8]{inputenc}   % fontspec 下不需要 inputenc
+\usepackage{fontenc}          % 与 fontspec 冲突
+
+% === 故意使用不存在的字体（触发 FONT_NOT_FOUND）===
+\setmainfont{完全不存在的字体名称ABCXYZ}
+
+% === 重复加载宏包 ===
+\usepackage{amsmath}
+\usepackage{amsmath}
+
+% === 缺失宏包（正文引用但未加载）===
+% 注意: 未加载 hyperref
+
+\newcommand{\testcmd}[1]{#1}
+
+\begin{document}
+
+\section{测试}
+这是一个故意包含错误的文档。
+
+% === 未定义命令 ===
+\undefinedcommand{hello}
+
+% === 数学模式错误 ===
+\begin{equation}
+    x = y +
+\end{equation}
+
+% === 引用不存在的标签 ===
+在第~\ref{sec:nonexistent} 节中...
+
+\section{另一个测试}
+
+\end{document}
